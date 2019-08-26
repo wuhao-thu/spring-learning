@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        https://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!-- 配置数据源 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+    </bean>
+
+    <!-- 配置 Hibernate 的 SessionFactory 实例: 通过 Spring 提供的 LocalSessionFactoryBean 进行配置 -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!-- 配置数据源属性 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 配置 hibernate 配置文件的位置及名称 -->
+        <property name="configLocation" value="classpath:hibernate.cfg.xml"/>
+        <!-- 也可以不使用配置文件，直接通过 hibernateProperties 属性来配置 Hibernate 原生的属性 -->
+        <!--
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+            </props>
+        </property>
+        -->
+        <!-- 配置 hibernate 映射文件的位置及名称, 可以使用通配符 -->
+<!--        <property name="mappingLocations" value="classpath:my/test/spring/hibernate/entities/*.hbm.xml"/>-->
+        <property name="packagesToScan">
+            <list>
+                <value>my.test.spring.hibernate.entities</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="hibernateTemplate" class="org.springframework.orm.hibernate5.HibernateTemplate">
+        <property name="sessionFactory"  ref="sessionFactory"/>
+        <property name="checkWriteOperations" value="false"/>
+    </bean>
+
+    <!-- 配置 Spring 的声明式事务 -->
+    <!-- 1. 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- 2. 启用事务注解 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <context:component-scan base-package="my.test.spring.hibernate"/>
+</beans>
